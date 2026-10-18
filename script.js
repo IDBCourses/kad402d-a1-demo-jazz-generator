@@ -18,15 +18,29 @@
  * Tone.js documentation: https://tonejs.github.io/docs/15.1.22/
  */
 
+/*
+When the user presses a key, we play random notes from a scale, one every 1/4 second for ever.
+
+Let's break that down:
+1. Handle a key press which starts the process.
+2. have an array with notes
+3. "The Process" -> function
+ *b. get a random number representing an array index
+  c. get the note out of the array
+  d. give the note to the synth -> playing the note
+  e. wait for some time
+  f. play the next note -> do the function again
+*/
+
 // ---------- Settings ----------
 // Settings variables should contain all of the "fixed" parts of your programs
 // For example: which key does what, which notes you can play, the tempo.
-const exampleKey = "a"; // the key that plays the example note
-const exampleNote = "C4"; // the note it plays
+const scale = ["C", "D", "Eb", "E", "G", "A"];
 
 // ---------- State ----------
 // State variables are the parts of your program that change over time.
 // For example: which octave you're playing in, or whether a drone is on.
+let isRunning = false;
 
 // ---------- Sound ----------
 // Make the instruments and plug them into the speakers.
@@ -40,10 +54,22 @@ function update() {
   setTimeout(update, 100); // call update() again in 100 milliseconds
 }
 
+function getRandomNumberZeroTo(upperLimit) {
+  let r = Math.random() * upperLimit;
+  let wholeNumber = Math.floor(r);
+  return wholeNumber;
+}
+
 // ---------- Use ----------
 // Use the state to make sound. This is called every 100ms.
 function use() {
-  setTimeout(use, 100); // call use() again in 100 milliseconds
+  let noteIndex = getRandomNumberZeroTo(scale.length);
+  let note = scale[noteIndex];
+  let octave = getRandomNumberZeroTo(2) + 3;
+
+  synth.triggerAttackRelease(note + octave, "8n", Tone.now());
+
+  setTimeout(use, 250); // call use() again in 100 milliseconds
 }
 
 // ---------- Controls (Event Handlers) ----------
@@ -52,23 +78,11 @@ function keyDown(event) {
   Tone.start(); // browsers only allow sound after the player has pressed something
 
   // Holding a key down sends keydown again and again. Only react to the first one.
-  if (event.repeat === false) {
+  if (isRunning === false) {
+    // we could also write !isRunning
     console.log("Key down:", event.key);
-
-    // Example: replace this with your own instrument.
-    if (event.key === exampleKey) {
-      synth.triggerAttack(exampleNote, Tone.now()); // keeps sounding until triggerRelease
-    }
-  }
-}
-
-// Runs every time a key comes up.
-function keyUp(event) {
-  console.log("Key up:", event.key);
-
-  // Example: replace this with your own instrument.
-  if (event.key === exampleKey) {
-    synth.triggerRelease(exampleNote, Tone.now());
+    use(); // start the use loop
+    isRunning = true;
   }
 }
 
@@ -76,11 +90,9 @@ function keyUp(event) {
 // Setup is run once, at the start of the program. It sets everything up for us!
 function setup() {
   update(); // start the update loop
-  use(); // start the use loop
 
   // Put your event listener code here
   window.addEventListener("keydown", keyDown);
-  window.addEventListener("keyup", keyUp);
 }
 
 setup(); // Always remember to call setup()!
